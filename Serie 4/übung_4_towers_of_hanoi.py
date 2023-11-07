@@ -4,14 +4,15 @@ import time
 
 # Task 1:
 class TowersOfHanoi:
+    
     towers: list[list[int]]
+    
     def __init__(self, start_config: list[list[int]]) -> None:
-        self.towers = start_config
         """
         translates the start configuration into a representation chosen by you for solving the search problem
         """
-        # TODO: implement
-        pass
+        
+        self.towers = start_config
 
     def valid_move(self, move: tuple[int, int]) -> bool:
         """
