@@ -87,9 +87,39 @@ class TowersOfHanoi:
         :param state:
         :return:
         """
-        # TODO: implement
-        pass
-
+        #get maxWidth and heights of each pole
+        diskWidths = []
+        diskHeights = []
+        
+        for disk in self.towers:
+            if(len(disk) == 0):
+                diskWidths.append(1) # empty rod
+            else:
+                diskWidths.append(disk[-1]*2-1) # width of biggest disk * 2 - 1 (for better visual)
+            diskHeights.append(len(disk))
+        
+        #print each level of each pole
+        maxHeight = max(diskHeights)
+        
+        # width * 2 - 1 to make each width uneven (for better visual)
+        for height in range(maxHeight):
+            for i in range(len(self.towers)):
+                if((maxHeight - height) > diskHeights[i]):
+                    spaces = diskWidths[i]-1 # -2 = -1 (width of disk) -1 (disk pole)
+                    leftSpaces = spaces // 2
+                    rightSpaces = spaces - leftSpaces
+                    print(" "*leftSpaces, end="")
+                    print("|", end="")
+                    print(" "*rightSpaces, end=" ")
+                else:
+                    currentWidth = self.towers[i][height-(maxHeight-diskHeights[i])]*2-1 #adjusting to height of current disk
+                    spaces = diskWidths[i] - currentWidth
+                    leftSpaces = spaces // 2
+                    rightSpaces = spaces - leftSpaces
+                    print(" "*leftSpaces, end="")
+                    print("#"*currentWidth, end="")
+                    print(" "*rightSpaces, end=" ")
+            print()        
 
 def finished_heuristic(state: TowersOfHanoi) -> float:
     """
@@ -140,6 +170,7 @@ if __name__ == '__main__':
     game2 = TowersOfHanoi([[2], [3], [4, 5, 6, 7], [8, 9], [1]])
     game3 = TowersOfHanoi([[15], [], [], [], [], [], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]])
 
+    game2.draw()
     # Try your heuristic search:
     search = HeuristicSearch(my_heuristic)
     start_time = time.perf_counter()
