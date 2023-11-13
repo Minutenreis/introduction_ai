@@ -1,18 +1,29 @@
 from collections.abc import Callable
 import time
+import copy
 
+type Tower = list[list[int]]
+type OpenList = list[tuple[TowersOfHanoi, int, list[tuple[int, int]], list[Tower]]]
 
 # Task 1:
 class TowersOfHanoi:
     
-    towers: list[list[int]]
-    
-    def __init__(self, start_config: list[list[int]]) -> None:
+    def __init__(self, start_config: Tower) -> None:
         """
         translates the start configuration into a representation chosen by you for solving the search problem
         """
         
         self.towers = start_config
+        self.maxDisk = max([max(tower) for tower in self.towers if len(tower) > 0])
+    
+    def move(self, move: tuple[int, int]) -> None:
+        """
+        moves the top most disk from the start rod to the target rod
+        :param start: int
+        :param target: int
+        :return: None
+        """
+        self.towers[move[1]].insert(0, self.towers[move[0]].pop(0))
 
     def valid_move(self, move: tuple[int, int]) -> bool:
         """
@@ -51,9 +62,8 @@ class TowersOfHanoi:
         returns the set of all valid moves out of the current TowersOfHanoi state
         :return: the set of valid moves as tuples of int
         """
-        list = [{i,j} for i in range(len(self.towers)) for j in range(len(self.towers)) if(self.valid_move((i,j)))]
-        set = set(list)
-        return set
+        list = [(i,j) for i in range(len(self.towers)) for j in range(len(self.towers)) if(self.valid_move((i,j)))]
+        return set(list)
 
     def __eq__(self, other) -> bool:
         """
@@ -139,11 +149,19 @@ class HeuristicSearch:
         - open list
         - if necessary: parallel search trees from multiple angles (e.g. for forward + backward search)
         """
+        self.L : OpenList = [] # open list (list of tuples (state, heuristic, path, previous moves))
         if not heuristic:
             self.heuristic = finished_heuristic
         else:
             self.heuristic = heuristic
-
+    
+    def drawPath(self, path: list[tuple[int, int]], start: TowersOfHanoi) -> None:
+        start.draw()
+        for move in path:
+            print()
+            start.move(move)
+            start.draw()
+    
     def solve(self, state: TowersOfHanoi) -> list[tuple[int, int]]:
         """
         finds a solution to the given problem state
@@ -152,8 +170,29 @@ class HeuristicSearch:
         If a solution has been found, clear the state variables of the HeuristicSearch
         e.g. clean the open list and the closed list and any other stateful variables
         """
-        # TODO: implement
-        pass
+        #BTHC
+        start = TowersOfHanoi(copy.deepcopy(state.towers))
+        self.L.append((state, self.heuristic(state), [], []))
+        while len(self.L) > 0:
+            current = self.L.pop(0)
+            if(self.heuristic(current[0]) == 0):
+                self.L.clear()
+                self.drawPath(current[2], start)
+                return current[2]
+            children: OpenList = []
+            for move in current[0].valid_moves():
+                newState: TowersOfHanoi = TowersOfHanoi(copy.deepcopy(current[0].towers))
+                newState.move(move)
+                newPath = current[2].copy()
+                newPath.append(move)
+                previousMoves = current[3].copy()
+                previousMoves.append(current[0])
+                if(newState in previousMoves): # check if state has already been visited
+                    continue
+                children.append((newState, self.heuristic(newState), newPath, previousMoves))
+            children.sort(key=lambda x: x[1])
+            self.L = children + self.L
+        return None
 
 
 def my_heuristic(state: TowersOfHanoi) -> float:
@@ -161,8 +200,17 @@ def my_heuristic(state: TowersOfHanoi) -> float:
     :param state: a state of the TowersOfHanoi problem
     :return: the cumulated estimated cost of the path from the state to the goal state
     """
-    # TODO: implement
-    pass
+    lastPeg = state.towers[-1]
+    if(len(lastPeg) == state.maxDisk):
+        return 0 # already solved
+    numOfLargeDisks = len(lastPeg)
+    for i in range(len(lastPeg)): # check how many of the largest disks are on the last peg
+        if(lastPeg[-i-1] != state.maxDisk-i):
+            numOfLargeDisks = i
+            break
+    movesLastDisk =  (len(lastPeg)-numOfLargeDisks)*2 # 2 moves to get them off the last peg and later on again
+    movesOtherDisks = state.maxDisk - len(lastPeg) # move all other disks to the last peg at least once
+    return movesLastDisk + movesOtherDisks
 
 
 if __name__ == '__main__':
@@ -170,24 +218,24 @@ if __name__ == '__main__':
     game2 = TowersOfHanoi([[2], [3], [4, 5, 6, 7], [8, 9], [1]])
     game3 = TowersOfHanoi([[15], [], [], [], [], [], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]])
 
-    game2.draw()
     # Try your heuristic search:
     search = HeuristicSearch(my_heuristic)
     start_time = time.perf_counter()
     solution1 = search.solve(game1)
+    print("solved 1")
     duration1 = time.perf_counter()-start_time
     solution2 = search.solve(game2)
+    print("solved 2")
     duration2 = time.perf_counter()-start_time-duration1
     solution3 = search.solve(game3)
+    print("solved 3")
     duration3 = time.perf_counter()-start_time-duration2-duration1
 
     print("Solve duration of game 1:", duration1, "\nSolve duration of game 2:", duration2,
           "\nSolve duration of game 3:", duration3)
+    # print("Solution of game 1:", solution1, "\nSolution of game 2:", solution2, "\nSolution of game 3:", solution3)
     print("press enter to end process")
     input()
-    # TODO: implement
-    pass
-
 
 # input:
 # output:
