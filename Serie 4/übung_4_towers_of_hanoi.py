@@ -3,7 +3,8 @@ import time
 import copy
 
 type Tower = list[list[int]]
-type OpenList = list[tuple[TowersOfHanoi, int, list[tuple[int, int]], list[Tower]]]
+type Move = tuple[int, int]
+type OpenList = list[tuple[TowersOfHanoi, int, list[Move], list[Tower]]]
 
 # Task 1:
 class TowersOfHanoi:
@@ -16,7 +17,7 @@ class TowersOfHanoi:
         self.towers = start_config
         self.maxDisk = max([max(tower) for tower in self.towers if len(tower) > 0])
     
-    def move(self, move: tuple[int, int]) -> None:
+    def move(self, move: Move) -> None:
         """
         moves the top most disk from the start rod to the target rod
         :param start: int
@@ -25,7 +26,7 @@ class TowersOfHanoi:
         """
         self.towers[move[1]].insert(0, self.towers[move[0]].pop(0))
 
-    def valid_move(self, move: tuple[int, int]) -> bool:
+    def valid_move(self, move: Move) -> bool:
         """
         tests the validity of moving the top most disk between the two rods listed in the tuple from first to second.
         returns true, if the following criteria are met:
@@ -57,7 +58,7 @@ class TowersOfHanoi:
         
         return False
 
-    def valid_moves(self) -> set[tuple[int, int]]:
+    def valid_moves(self) -> set[Move]:
         """
         returns the set of all valid moves out of the current TowersOfHanoi state
         :return: the set of valid moves as tuples of int
@@ -156,12 +157,12 @@ class HeuristicSearch:
             self.heuristic = heuristic
     
     @staticmethod
-    def drawPath(path: list[tuple[int, int]], start: TowersOfHanoi) -> None:
+    def drawPath(path: list[Move], start: TowersOfHanoi) -> None:
         """
         draws the path of the solution to the console
 
         Args:
-            path (list[tuple[int, int]]): path to solution
+            path (list[Move]): path to solution
             start (TowersOfHanoi): start state of solution
         """
         start.draw()
@@ -170,7 +171,7 @@ class HeuristicSearch:
             start.move(move)
             start.draw()
     
-    def solve(self, state: TowersOfHanoi, draw = False) -> list[tuple[int, int]]:
+    def solve(self, state: TowersOfHanoi, draw = False) -> list[Move]:
         """
         :param: draw => if set to true, will print the solution to the console
         you can also use HeuristicSearch.drawPath(path ,startState) to draw the solution
@@ -199,11 +200,11 @@ class HeuristicSearch:
                 newState.move(move) # new state after move
                 newPath = current[2].copy()
                 newPath.append(move) # old path + new move = new path
-                previousMoves = current[3].copy()
-                previousMoves.append(current[0]) # last previous moves + last state = new previous moves
-                if(newState in previousMoves): # check if state has already been visited
+                previousStates = current[3].copy()
+                previousStates.append(current[0]) # last previous moves + last state = new previous moves
+                if(newState in previousStates): # check if state has already been visited
                     continue
-                children.append((newState, self.heuristic(newState), newPath, previousMoves))
+                children.append((newState, self.heuristic(newState), newPath, previousStates))
             
             children.sort(key=lambda x: x[1])
             self.L = children + self.L # add children to the start of the open list
