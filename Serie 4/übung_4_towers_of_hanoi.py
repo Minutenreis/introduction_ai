@@ -156,6 +156,13 @@ class HeuristicSearch:
             self.heuristic = heuristic
     
     def drawPath(self, path: list[tuple[int, int]], start: TowersOfHanoi) -> None:
+        """
+        draws the path of the solution to the console
+
+        Args:
+            path (list[tuple[int, int]]): path to solution
+            start (TowersOfHanoi): start state of solution
+        """
         start.draw()
         for move in path:
             print()
@@ -171,27 +178,31 @@ class HeuristicSearch:
         e.g. clean the open list and the closed list and any other stateful variables
         """
         #BTHC
-        start = TowersOfHanoi(copy.deepcopy(state.towers))
-        self.L.append((state, self.heuristic(state), [], []))
+        start = TowersOfHanoi(copy.deepcopy(state.towers))# save for later drawing the solution
+        
+        self.L.append((state, self.heuristic(state), [], [])) # start state = startconfiguration, its heuristic; no paths or previous moves yet
         while len(self.L) > 0:
-            current = self.L.pop(0)
+            current = self.L.pop(0) # get first element of open list
             if(self.heuristic(current[0]) == 0):
+                # found solution -> draw path, clean up and return solution
                 self.L.clear()
                 self.drawPath(current[2], start)
                 return current[2]
-            children: OpenList = []
-            for move in current[0].valid_moves():
+            
+            children: OpenList = []  # list of children of current state
+            for move in current[0].valid_moves(): # generate new children
                 newState: TowersOfHanoi = TowersOfHanoi(copy.deepcopy(current[0].towers))
-                newState.move(move)
+                newState.move(move) # new state after move
                 newPath = current[2].copy()
-                newPath.append(move)
+                newPath.append(move) # old path + new move = new path
                 previousMoves = current[3].copy()
-                previousMoves.append(current[0])
+                previousMoves.append(current[0]) # last previous moves + last state = new previous moves
                 if(newState in previousMoves): # check if state has already been visited
                     continue
                 children.append((newState, self.heuristic(newState), newPath, previousMoves))
+            
             children.sort(key=lambda x: x[1])
-            self.L = children + self.L
+            self.L = children + self.L # add children to the start of the open list
         return None
 
 
@@ -199,11 +210,13 @@ def my_heuristic(state: TowersOfHanoi) -> float:
     """
     :param state: a state of the TowersOfHanoi problem
     :return: the cumulated estimated cost of the path from the state to the goal state
+
+    costs: (length of last Peg + constant) e O(n)
     """
     lastPeg = state.towers[-1]
     if(len(lastPeg) == state.maxDisk):
         return 0 # already solved
-    numOfLargeDisks = len(lastPeg)
+    numOfLargeDisks = len(lastPeg) 
     for i in range(len(lastPeg)): # check how many of the largest disks are on the last peg
         if(lastPeg[-i-1] != state.maxDisk-i):
             numOfLargeDisks = i
