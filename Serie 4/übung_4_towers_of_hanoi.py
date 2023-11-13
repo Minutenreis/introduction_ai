@@ -155,7 +155,8 @@ class HeuristicSearch:
         else:
             self.heuristic = heuristic
     
-    def drawPath(self, path: list[tuple[int, int]], start: TowersOfHanoi) -> None:
+    @staticmethod
+    def drawPath(path: list[tuple[int, int]], start: TowersOfHanoi) -> None:
         """
         draws the path of the solution to the console
 
@@ -169,8 +170,10 @@ class HeuristicSearch:
             start.move(move)
             start.draw()
     
-    def solve(self, state: TowersOfHanoi) -> list[tuple[int, int]]:
+    def solve(self, state: TowersOfHanoi, draw = False) -> list[tuple[int, int]]:
         """
+        :param: draw => if set to true, will print the solution to the console
+        you can also use HeuristicSearch.drawPath(path ,startState) to draw the solution
         finds a solution to the given problem state
         :return: the sequence of valid moves as described in the readme.md
 
@@ -186,7 +189,8 @@ class HeuristicSearch:
             if(self.heuristic(current[0]) == 0):
                 # found solution -> draw path, clean up and return solution
                 self.L.clear()
-                self.drawPath(current[2], start)
+                if(draw):
+                    self.drawPath(current[2], start)
                 return current[2]
             
             children: OpenList = []  # list of children of current state
@@ -235,13 +239,13 @@ if __name__ == '__main__':
     search = HeuristicSearch(my_heuristic)
     start_time = time.perf_counter()
     solution1 = search.solve(game1)
-    print("solved 1")
+    print("solved 1 in", len(solution1), " moves")
     duration1 = time.perf_counter()-start_time
     solution2 = search.solve(game2)
-    print("solved 2")
+    print("solved 2 in", len(solution2), " moves")
     duration2 = time.perf_counter()-start_time-duration1
     solution3 = search.solve(game3)
-    print("solved 3")
+    print("solved 3 in", len(solution3), " moves")
     duration3 = time.perf_counter()-start_time-duration2-duration1
 
     print("Solve duration of game 1:", duration1, "\nSolve duration of game 2:", duration2,
