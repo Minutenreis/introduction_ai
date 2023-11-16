@@ -240,6 +240,7 @@ if __name__ == '__main__':
     search = HeuristicSearch(my_heuristic)
     start_time = time.perf_counter()
     solution1 = search.solve(game1)
+    HeuristicSearch.drawPath(solution1, game1)
     print("solved 1 in", len(solution1), " moves")
     duration1 = time.perf_counter()-start_time
     solution2 = search.solve(game2)
