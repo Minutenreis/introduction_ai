@@ -158,7 +158,8 @@ class Maze:
                     
         return "\n".join(tempRows)
     
-    def getCoord(self, node):
+    @staticmethod
+    def getCoord(node):
         return (int(node.split("x")[0]), int(node.split("x")[1].split("y")[0]))
 
 def a_search(start_state: Maze, heuristics: Callable[[Maze], float]) -> Maze:
@@ -219,8 +220,17 @@ def my_heuristic(lab: Maze) -> float:
     maze!
     (If necessary, add the values you need in your representation or as arguments to make this calculation efficient!)
     """
-    # TODO: implement
-    return 0
+    if lab.solved():
+        return 0
+    (x,y) = Maze.getCoord(lab.current)
+    finishes = [Maze.getCoord(finish) for finish in lab.finish]
+    minDistance = float("inf")
+    for (x1,y1) in finishes:
+        distance = abs(x1-x) + abs(y1-y)
+        if distance < minDistance:
+            minDistance = distance
+    return minDistance
+    
 
 
 # Try it out, when it is all put together:
