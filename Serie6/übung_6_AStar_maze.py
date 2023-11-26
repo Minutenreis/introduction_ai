@@ -1,6 +1,7 @@
 from dill import load
 from collections.abc import Callable
 import time
+import networkx as nx
 
 
 class Maze:
@@ -54,62 +55,113 @@ class Maze:
     Also feel free to add additional arguments to your function definitions as seen fit
     ====================================================================================================================
     """
-    def __init__(self, data: None) -> None: # TODO: change this method signature
+    def __init__(self, data: nx.Graph, current: str, finish: list[str], path: list[str], rows : list[str]):
         """
         Stores all required variables for you representation in the state.
         """
-        # TODO: implement
-        pass
+        self.graph = data #potentially global
+        self.current = current
+        self.finish = finish #potentially global
+        self.path = path
+        self.rows = rows #potentially global
 
     @classmethod
     def from_string(cls, raw_lab_text: str):
         """
         Sets up a suitable representation of the given maze, given as a string raw_lab_text
         """
-        # TODO: implement conversion to your representation
-        your_representation = None
-        # TODO: Probably store something in a global variable as well
-        return cls(your_representation)
+        graph = nx.Graph()
+        nodes = []
+        edges = []
+        rows = raw_lab_text.split("\n")
+        xLength = len(rows[0])
+        yLength = len(rows)
+        start = ""
+        finish = []
+        for i in range(xLength):
+            for j in range(yLength):
+                if rows[j][i] == " " or rows[j][i] == "S" or rows[j][i] == "F":
+                    nodes.append(str(i) + "x" + str(j) + "y")
+                    if(i > 0 and rows[j][i-1] == " "):
+                        edges.append((str(i) + "x" + str(j) + "y", str(i-1) + "x" + str(j) + "y"))
+                    if(i < xLength-1 and rows[j][i+1] == " "):
+                        edges.append((str(i) + "x" + str(j) + "y", str(i+1) + "x" + str(j) + "y"))
+                    if(j > 0 and rows[j-1][i] == " "):
+                        edges.append((str(i) + "x" + str(j) + "y", str(i) + "x" + str(j-1) + "y"))
+                    if(j < yLength-1 and rows[j+1][i] == " "):
+                        edges.append((str(i) + "x" + str(j) + "y", str(i) + "x" + str(j+1) + "y"))
+                    if(rows[j][i] == "S"):
+                        start = str(i) + "x" + str(j) + "y"
+                    if(rows[j][i] == "F"):
+                        finish.append(str(i) + "x" + str(j) + "y")
+        graph.add_nodes_from(nodes)
+        graph.add_edges_from(edges)
+        
+        return cls(graph, start, finish, [], rows)
 
-    def transition(self) -> list[tuple]:
+    # returns list[Maze]
+    def transition(self):
         """
         returns a list of states that are neighboring the current state with their respective costs to get to from this
         current state
         """
-        # TODO: implement
-        pass
+        newStates = [node for node in self.graph.adj[self.current] if node not in self.path]
+        return [Maze(self.graph, node, self.finish, self.path + [self.current],self.rows) for node in newStates]
 
     def solved(self) -> bool:
         """
         returns true if the state of the maze is solved by reaching a finish 'F' from the start 'S' , else false
         """
-        # TODO: implement
-        pass
+        if self.current in self.finish:
+            return True
+        return False
 
     def __eq__(self, other_state) -> bool:
         """
         returns true if the other_state is equal to this maze state
         """
-        # TODO: implement
-        pass
+        
+        if not isinstance(other_state, Maze):
+            # don't attempt to compare against unrelated types
+            return NotImplemented
+
+        if self.current != other_state.current:
+            return False
+        
+        if self.finish != other_state.finish:
+            return False
+        
+        if (nx.is_isomorphic(self.graph, other_state.graph) == False):
+            return False
+        
+        return True
 
     def g(self) -> float:
         """
         returns the costs of the path taken until this state
         """
-        # TODO: implement
-        pass
+        return len(self.path)
 
     def to_string(self) -> str:
         """
         returns the string representation as given, but with the path taken from the start to the current state
         replaced by '*' characters (-> see example above in class description)
         """
-        # TODO: implement
-        pass
+        if(not self.solved()):
+            return "\n".join(self.rows)
+        
+        tempRows = self.rows.copy()
+        
+        for elem in self.path[1:]:
+            (x,y) = self.getCoord(elem)
+            tempRows[y] = tempRows[y][:x] + "*" + tempRows[y][x+1:]
+                    
+        return "\n".join(tempRows)
+    
+    def getCoord(self, node):
+        return (int(node.split("x")[0]), int(node.split("x")[1].split("y")[0]))
 
-
-def a_search(start_state: Maze, heuristics: Callable[[Maze], float]) -> list[tuple]:
+def a_search(start_state: Maze, heuristics: Callable[[Maze], float]) -> Maze:
     """
     Task 2: Create the A Algorithm with closed and open list. As a reminder, these are the steps: (6P)
     1. Let the open list be the list of start nodes for the problem (first state of the maze after initialization)
@@ -128,8 +180,34 @@ def a_search(start_state: Maze, heuristics: Callable[[Maze], float]) -> list[tup
     Question (2P): A becomes A* for an admissible heuristics. Does A* return always the optimal solution first even if
     it won't use a closed list to keep track of all already visited states? Explain your answer!
     """
-    # TODO: implement
-    pass
+    L = [start_state]
+    C = []
+    lengths = {}
+    G = nx.DiGraph()
+    G.add_node(start_state.current)
+    while len(L) > 0:
+        n = min(L, key=lambda x: x.g() + heuristics(x))
+        L.remove(n)
+        C.append(n)
+        if n.solved():
+            return n
+        for m in n.transition():
+            if m.current not in G.predecessors(n.current):
+                if m not in C and m not in L:
+                    G.add_node(m.current)
+                    lengths[m.current] = m.g()
+                    G.add_edge(n.current, m.current)
+                    L.append(m)
+                else:
+                    if m.g() < lengths[m.current]:
+                        lengths[m.current] = m.g()
+                        oldEdges = G.in_edges(m.current) # only 1
+                        G.remove_edge(oldEdges[0][0], oldEdges[0][1])
+                        G.add_edge(n.current, m.current)
+                        costChange = m.g() - lengths[m.current]
+                        for succ in G.successors(m.current):
+                            lengths[succ] += costChange
+    return None
 
 
 def my_heuristic(lab: Maze) -> float:
@@ -142,7 +220,7 @@ def my_heuristic(lab: Maze) -> float:
     (If necessary, add the values you need in your representation or as arguments to make this calculation efficient!)
     """
     # TODO: implement
-    pass
+    return 0
 
 
 # Try it out, when it is all put together:
@@ -166,12 +244,12 @@ if __name__ == '__main__':
     start_time = time.perf_counter()
     solution1 = a_search(Maze.from_string(maze1), my_heuristic)
     duration1 = time.perf_counter() - start_time
-    print(solution1[-1][1].to_string())
+    print(solution1.to_string())
 
     start_time = time.perf_counter()
     solution2 = a_search(Maze.from_string(maze2), my_heuristic)
     duration2 = time.perf_counter() - start_time
-    print(solution2[-1][1].to_string())
+    print(solution2.to_string())
 
     start_time = time.perf_counter()
     solution3 = a_search(Maze.from_string(maze3), my_heuristic)
