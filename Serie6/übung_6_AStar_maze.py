@@ -1,3 +1,4 @@
+from numpy import sqrt
 from dill import load
 from collections.abc import Callable
 import time
@@ -181,6 +182,9 @@ def a_search(start_state: Maze, heuristics: Callable[[Maze], float]) -> Maze:
     Question (2P): A becomes A* for an admissible heuristics. Does A* return always the optimal solution first even if
     it won't use a closed list to keep track of all already visited states? Explain your answer!
     """
+    #unsolvable
+    if(start_state.finish == []):
+        return start_state
     L = [start_state]
     C = []
     lengths = {}
@@ -202,13 +206,13 @@ def a_search(start_state: Maze, heuristics: Callable[[Maze], float]) -> Maze:
                 else:
                     if m.g() < lengths[m.current]:
                         lengths[m.current] = m.g()
-                        oldEdges = G.in_edges(m.current) # only 1
+                        oldEdges = list(G.in_edges(m.current)) # only 1
                         G.remove_edge(oldEdges[0][0], oldEdges[0][1])
                         G.add_edge(n.current, m.current)
                         costChange = m.g() - lengths[m.current]
                         for succ in G.successors(m.current):
                             lengths[succ] += costChange
-    return None
+    return start_state
 
 
 def my_heuristic(lab: Maze) -> float:
@@ -220,13 +224,17 @@ def my_heuristic(lab: Maze) -> float:
     maze!
     (If necessary, add the values you need in your representation or as arguments to make this calculation efficient!)
     """
-    if lab.solved():
-        return 0
+    # smallest manhattan distance to a finish
     (x,y) = Maze.getCoord(lab.current)
     finishes = [Maze.getCoord(finish) for finish in lab.finish]
-    minDistance = float("inf")
+    minDistance = float('inf')
     for (x1,y1) in finishes:
+        # manhatten distance
         distance = abs(x1-x) + abs(y1-y)
+        # euclidean distance
+        # distance = sqrt((x1-x)**2 + (y1-y)**2)
+        # chebyshev distance
+        # distance = max(abs(x1-x), abs(y1-y))
         if distance < minDistance:
             minDistance = distance
     return minDistance
@@ -246,10 +254,10 @@ if __name__ == '__main__':
     print(generate_random_maze(16))
 
     # Let's solve mazes of different difficulty:
-    maze1 = generate_random_maze(15)
-    maze2 = generate_random_maze(200)
-    maze3 = generate_random_maze(16180)
-    maze4 = generate_random_maze(31415)
+    maze1 = generate_random_maze(200)
+    maze2 = generate_random_maze(201)
+    maze3 = generate_random_maze(202)
+    maze4 = generate_random_maze(203)
 
     start_time = time.perf_counter()
     solution1 = a_search(Maze.from_string(maze1), my_heuristic)
@@ -264,6 +272,7 @@ if __name__ == '__main__':
     start_time = time.perf_counter()
     solution3 = a_search(Maze.from_string(maze3), my_heuristic)
     duration3 = time.perf_counter() - start_time
+    print("done with maze 3")
 
     start_time = time.perf_counter()
     solution4 = a_search(Maze.from_string(maze4), my_heuristic)
