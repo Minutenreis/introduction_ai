@@ -139,8 +139,8 @@ class Maze:
         if self.finish != other_state.finish:
             return False
 
-        if (nx.is_isomorphic(self.graph, other_state.graph) == False):
-            return False
+        # if (nx.is_isomorphic(self.graph, other_state.graph) == False):
+        #     return False
 
         return True
 
