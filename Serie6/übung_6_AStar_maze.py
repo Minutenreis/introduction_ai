@@ -3,6 +3,7 @@ from dill import load
 from collections.abc import Callable
 import time
 import networkx as nx
+import platform
 
 
 class Maze:
@@ -56,15 +57,16 @@ class Maze:
     Also feel free to add additional arguments to your function definitions as seen fit
     ====================================================================================================================
     """
-    def __init__(self, data: nx.Graph, current: str, finish: list[str], path: list[str], rows : list[str]):
+
+    def __init__(self, data: nx.Graph, current: str, finish: list[str], path: list[str], rows: list[str]):
         """
         Stores all required variables for you representation in the state.
         """
-        self.graph = data #potentially global
+        self.graph = data  # potentially global
         self.current = current
-        self.finish = finish #potentially global
+        self.finish = finish  # potentially global
         self.path = path
-        self.rows = rows #potentially global
+        self.rows = rows  # potentially global
 
     @classmethod
     def from_string(cls, raw_lab_text: str):
@@ -83,21 +85,25 @@ class Maze:
             for j in range(yLength):
                 if rows[j][i] == " " or rows[j][i] == "S" or rows[j][i] == "F":
                     nodes.append(str(i) + "x" + str(j) + "y")
-                    if(i > 0 and rows[j][i-1] == " "):
-                        edges.append((str(i) + "x" + str(j) + "y", str(i-1) + "x" + str(j) + "y"))
-                    if(i < xLength-1 and rows[j][i+1] == " "):
-                        edges.append((str(i) + "x" + str(j) + "y", str(i+1) + "x" + str(j) + "y"))
-                    if(j > 0 and rows[j-1][i] == " "):
-                        edges.append((str(i) + "x" + str(j) + "y", str(i) + "x" + str(j-1) + "y"))
-                    if(j < yLength-1 and rows[j+1][i] == " "):
-                        edges.append((str(i) + "x" + str(j) + "y", str(i) + "x" + str(j+1) + "y"))
-                    if(rows[j][i] == "S"):
+                    if (i > 0 and rows[j][i-1] == " "):
+                        edges.append((str(i) + "x" + str(j) + "y",
+                                     str(i-1) + "x" + str(j) + "y"))
+                    if (i < xLength-1 and rows[j][i+1] == " "):
+                        edges.append((str(i) + "x" + str(j) + "y",
+                                     str(i+1) + "x" + str(j) + "y"))
+                    if (j > 0 and rows[j-1][i] == " "):
+                        edges.append((str(i) + "x" + str(j) + "y",
+                                     str(i) + "x" + str(j-1) + "y"))
+                    if (j < yLength-1 and rows[j+1][i] == " "):
+                        edges.append((str(i) + "x" + str(j) + "y",
+                                     str(i) + "x" + str(j+1) + "y"))
+                    if (rows[j][i] == "S"):
                         start = str(i) + "x" + str(j) + "y"
-                    if(rows[j][i] == "F"):
+                    if (rows[j][i] == "F"):
                         finish.append(str(i) + "x" + str(j) + "y")
         graph.add_nodes_from(nodes)
         graph.add_edges_from(edges)
-        
+
         return cls(graph, start, finish, [], rows)
 
     # returns list[Maze]
@@ -106,8 +112,9 @@ class Maze:
         returns a list of states that are neighboring the current state with their respective costs to get to from this
         current state
         """
-        newStates = [node for node in self.graph.adj[self.current] if node not in self.path]
-        return [Maze(self.graph, node, self.finish, self.path + [self.current],self.rows) for node in newStates]
+        newStates = [node for node in self.graph.adj[self.current]
+                     if node not in self.path]
+        return [Maze(self.graph, node, self.finish, self.path + [self.current], self.rows) for node in newStates]
 
     def solved(self) -> bool:
         """
@@ -121,20 +128,20 @@ class Maze:
         """
         returns true if the other_state is equal to this maze state
         """
-        
+
         if not isinstance(other_state, Maze):
             # don't attempt to compare against unrelated types
             return NotImplemented
 
         if self.current != other_state.current:
             return False
-        
+
         if self.finish != other_state.finish:
             return False
-        
+
         if (nx.is_isomorphic(self.graph, other_state.graph) == False):
             return False
-        
+
         return True
 
     def g(self) -> float:
@@ -148,20 +155,21 @@ class Maze:
         returns the string representation as given, but with the path taken from the start to the current state
         replaced by '*' characters (-> see example above in class description)
         """
-        if(not self.solved()):
+        if (not self.solved()):
             return "\n".join(self.rows)
-        
+
         tempRows = self.rows.copy()
-        
+
         for elem in self.path[1:]:
-            (x,y) = self.getCoord(elem)
+            (x, y) = self.getCoord(elem)
             tempRows[y] = tempRows[y][:x] + "*" + tempRows[y][x+1:]
-                    
+
         return "\n".join(tempRows)
-    
+
     @staticmethod
     def getCoord(node):
         return (int(node.split("x")[0]), int(node.split("x")[1].split("y")[0]))
+
 
 def a_search(start_state: Maze, heuristics: Callable[[Maze], float]) -> Maze:
     """
@@ -182,8 +190,8 @@ def a_search(start_state: Maze, heuristics: Callable[[Maze], float]) -> Maze:
     Question (2P): A becomes A* for an admissible heuristics. Does A* return always the optimal solution first even if
     it won't use a closed list to keep track of all already visited states? Explain your answer!
     """
-    #unsolvable
-    if(start_state.finish == []):
+    # unsolvable
+    if (start_state.finish == []):
         return start_state
     L = [start_state]
     C = []
@@ -206,7 +214,7 @@ def a_search(start_state: Maze, heuristics: Callable[[Maze], float]) -> Maze:
                 else:
                     if m.g() < lengths[m.current]:
                         lengths[m.current] = m.g()
-                        oldEdges = list(G.in_edges(m.current)) # only 1
+                        oldEdges = list(G.in_edges(m.current))  # only 1
                         G.remove_edge(oldEdges[0][0], oldEdges[0][1])
                         G.add_edge(n.current, m.current)
                         costChange = m.g() - lengths[m.current]
@@ -225,10 +233,10 @@ def my_heuristic(lab: Maze) -> float:
     (If necessary, add the values you need in your representation or as arguments to make this calculation efficient!)
     """
     # smallest manhattan distance to a finish
-    (x,y) = Maze.getCoord(lab.current)
+    (x, y) = Maze.getCoord(lab.current)
     finishes = [Maze.getCoord(finish) for finish in lab.finish]
     minDistance = float('inf')
-    for (x1,y1) in finishes:
+    for (x1, y1) in finishes:
         # manhatten distance
         distance = abs(x1-x) + abs(y1-y)
         # euclidean distance
@@ -238,7 +246,10 @@ def my_heuristic(lab: Maze) -> float:
         if distance < minDistance:
             minDistance = distance
     return minDistance
-    
+
+
+def getSecondaryPythonVersion():
+    return platform.python_version().split(".")[1]
 
 
 # Try it out, when it is all put together:
@@ -247,8 +258,23 @@ if __name__ == '__main__':
     IMPORTANT: you can change method signatures and input arguments as seen fit, as long as the main function can be
     executed as prepared in this example (for automatically testing your solution).
     """
-    with open("maze.dill", "rb") as f:
-        generate_random_maze = load(f)
+
+    pyVersion = getSecondaryPythonVersion()
+
+    if pyVersion == "10":
+        print("Using Python 3.10 and maze3.10.dill:\n")
+        with open("maze3.10.dill", "rb") as f:
+            generate_random_maze = load(f)
+    elif pyVersion == "11":
+        print("Using Python 3.11 and maze3.11.dill:\n")
+        with open("maze3.11.dill", "rb") as f:
+            generate_random_maze = load(f)
+    elif pyVersion == "12":
+        print("Using Python 3.12 and maze3.12.dill:\n")
+        with open("maze3.12.dill", "rb") as f:
+            generate_random_maze = load(f)
+    else:
+        raise Exception("Invalid Python-Version, use 3.10, 3.11 or 3.12")
 
     # This method can produce random mazes, given a random integer seed >= 2
     print(generate_random_maze(16))
@@ -285,4 +311,3 @@ if __name__ == '__main__':
           )
     print("press enter to end process")
     input()
-
